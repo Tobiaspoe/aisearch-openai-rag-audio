@@ -3,42 +3,32 @@ name: Deploy to Azure Web App
 on:
   push:
     branches:
-      - main
+      - main  # or your deployment branch
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the code from your repository
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Set up Azure CLI
-      - name: Set up Azure CLI
-        uses: azure/setup-azurecli@v1
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Log in to Azure using the service principal credentials
-      - name: Log in to Azure CLI
-        run: |
-          az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
-          az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Set Azure Subscription (Optional if not in AZURE_CREDENTIALS)
+        run: az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # (Optional) Install dependencies or prepare your app for deployment
-      - name: Install dependencies (if necessary)
+      - name: Create ZIP Package
         run: |
-          # If you're using Python, for example, you could install dependencies
-          # pip install -r requirements.txt
+          zip -r app.zip . -x ".git/*" ".github/*" "tests/*"
 
-      # Zip your app files for deployment
-      - name: Zip the app for deployment
+      - name: Deploy via Azure CLI
         run: |
-          zip -r app.zip .
-
-      # Deploy the app to Azure Web App using Zip
-      - name: Deploy to Azure Web App
-        run: |
-          az webapp deployment source config-zip \
+          az webapp deploy \
             --resource-group finmatch-bsfz \
             --name Finmatcho1--fzulg \
-            --src app.zip
+            --src-path app.zip \
+            --type zip
