@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
       - name: Install backend dependencies
         working-directory: "app/backend"
@@ -46,7 +46,7 @@ jobs:
           az webapp config set \
             --resource-group finmatch-bsfz \
             --name Finmatcho1--fzulg \
-            --linux-fx-version "PYTHON|3.11"
+            --linux-fx-version "PYTHON|3.10"
 
       - name: Deploy to Azure Web App
         run: |
@@ -68,4 +68,3 @@ jobs:
               AZURE_OPENAI_REALTIME_DEPLOYMENT=${{ secrets.AZURE_OPENAI_REALTIME_DEPLOYMENT }} \
               RUNNING_IN_PRODUCTION="true"
 
-              
