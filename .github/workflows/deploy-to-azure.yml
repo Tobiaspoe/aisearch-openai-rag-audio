@@ -33,17 +33,17 @@ jobs:
       - name: Prepare deployment package
         run: |
           # Copy frontend build to backend static folder
-          mkdir -p backend/static
-          cp -r frontend/dist/* backend/static/
-          
+          mkdir -p app/backend/static
+          cp -r app/frontend/dist/* app/backend/static/
+
           # Create ZIP package (excluding unnecessary files)
-          cd backend
-          zip -r ../app.zip . -x ".git/*" ".github/*" "tests/*" "*.env"
+          cd app/backend
+          zip -r ../../app.zip . -x ".git/*" ".github/*" "tests/*" "*.env"
 
       - name: Login to Azure
         uses: azure/login@v1
         with:
-          creds: ${{secrets.AZURE_CREDENTIALS}}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Set Python runtime
         run: |
