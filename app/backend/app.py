@@ -7,6 +7,7 @@ import aiohttp_cors
 from dotenv import load_dotenv
 import openai
 import json
+import traceback
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("voicerag")
@@ -34,13 +35,13 @@ async def create_app():
             data = await request.json()
             user_input = data.get("user_input", "")
 
-            openai.api_key = os.environ["OPENAI_API_KEY"]
-            openai.api_base = "https://api.openai.com/v1"
-            openai.api_type = "openai"
-            openai.api_version = None
+            openai.api_key = os.environ["AZURE_OPENAI_API_KEY"]
+            openai.api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
+            openai.api_type = "azure"
+            openai.api_version = "2023-12-01-preview"
 
             response = openai.ChatCompletion.create(
-                model="o1",
+                engine=os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT"],  # or just "o1" if that's the deployment name
                 messages=[
                     {"role": "system", "content": """ **Einleitung und Funktion**  
 Du erstellst Anträge für die Forschungszulage basierend auf deinem vorgegebenem Wissen. Du prüfst und optimierst die relevanten Kriterien gemäß der Benutzeraktion. Du passt Schreibstil und Zeichenlänge je nach Kriterium exakt an und folgst strikt der vorgegebenen Benutzerinteraktion. Falls der Benutzer abweicht (z. B. durch Rückfragen), kehrst du nach der Antwort direkt in den nächsten Schritt zurück. Diese Regeln haben höchste Priorität.
@@ -723,6 +724,7 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
             return web.json_response({"response": answer})
 
         except Exception as e:
+            logger.error(traceback.format_exc())
             return web.json_response({"error": str(e)}, status=500)
 
     app.router.add_post("/chat", chat_handler)
@@ -737,26 +739,29 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
             with open(temp_path, "wb") as f:
                 f.write(audio_file.read())
 
-            # Use Whisper via Azure OpenAI
+            # Transcription via Whisper (Azure OpenAI)
             with open(temp_path, "rb") as audio_file:
                 transcription = openai.Audio.transcribe(
-                    "whisper-1",
-                    audio_file,
+                    model="whisper-1",
+                    file=audio_file,
                     api_key=os.environ["AZURE_OPENAI_API_KEY"],
-                    api_base=os.environ["AZURE_OPENAI_ENDPOINT"]
+                    api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+                    api_type="azure",
+                    api_version="2025-03-01-preview"
                 )
 
             temp_path.unlink()
 
             user_input = transcription["text"]
 
-            # Now send transcribed text to o1 for response
-            openai.api_key = os.environ["OPENAI_API_KEY"]
-            openai.api_base = "https://api.openai.com/v1"
-            openai.api_type = "openai"
+            # Chat response with o1 model
+            openai.api_key = os.environ["AZURE_OPENAI_API_KEY"]
+            openai.api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
+            openai.api_type = "azure"
+            openai.api_version = "2025-03-01-preview"
 
             response = openai.ChatCompletion.create(
-                model="o1",
+                engine=os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT"],  # or "o1"
                 messages=[
                     {"role": "system", "content": """ **Einleitung und Funktion**  
 Du erstellst Anträge für die Forschungszulage basierend auf deinem vorgegebenem Wissen. Du prüfst und optimierst die relevanten Kriterien gemäß der Benutzeraktion. Du passt Schreibstil und Zeichenlänge je nach Kriterium exakt an und folgst strikt der vorgegebenen Benutzerinteraktion. Falls der Benutzer abweicht (z. B. durch Rückfragen), kehrst du nach der Antwort direkt in den nächsten Schritt zurück. Diese Regeln haben höchste Priorität.
@@ -1443,6 +1448,7 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
             })
 
         except Exception as e:
+            logger.error(traceback.format_exc())
             return web.json_response({"error": str(e)}, status=500)
 
     app.router.add_post("/realtime/transcribe", transcribe_and_respond)

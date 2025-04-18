@@ -46,7 +46,7 @@ jobs:
           az webapp config set \
             --resource-group finmatch-bsfz \
             --name Finmatcho1--fzulg \
-            --linux-fx-version "PYTHON|3.10"
+            --linux-fx-version "PYTHON|3.11"
 
       - name: Deploy to Azure Web App
         run: |
