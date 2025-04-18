@@ -22,17 +22,15 @@ export default function ChatInterface() {
 
   const sendMessage = async () => {
     if (!input.trim()) return;
-    
-    // Add user message
+
     setMessages(prev => [...prev, { content: input, isUser: true }]);
     setInput('');
-    
+
     try {
-      // Send to backend
       const response = await axios.post('/chat', { user_input: input });
       setMessages(prev => [...prev, { content: response.data.response, isUser: false }]);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error sending message:', error);
       setMessages(prev => [...prev, { content: "Sorry, there was an error.", isUser: false }]);
     }
   };
@@ -42,17 +40,17 @@ export default function ChatInterface() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder.current = new MediaRecorder(stream);
       audioChunks.current = [];
-      
+
       mediaRecorder.current.ondataavailable = (e) => {
         audioChunks.current.push(e.data);
       };
-      
+
       mediaRecorder.current.onstop = async () => {
         const audioBlob = new Blob(audioChunks.current, { type: 'audio/wav' });
         await sendAudio(audioBlob);
         stream.getTracks().forEach(track => track.stop());
       };
-      
+
       mediaRecorder.current.start();
       setIsRecording(true);
     } catch (error) {
@@ -70,22 +68,19 @@ export default function ChatInterface() {
   const sendAudio = async (audioBlob: Blob) => {
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.wav');
-    
+
     setMessages(prev => [...prev, { content: "(Processing voice...)", isUser: true }]);
-    
+
     try {
-      // First transcribe
       const transcribeRes = await axios.post('/realtime/transcribe', formData);
-      const text = transcribeRes.data.text;
-      
-      // Remove processing message and add transcription
+      const text = transcribeRes.data.transcription;
+
       setMessages(prev => [...prev.slice(0, -1), { content: text, isUser: true }]);
-      
-      // Then get response
+
       const chatRes = await axios.post('/chat', { user_input: text });
       setMessages(prev => [...prev, { content: chatRes.data.response, isUser: false }]);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error processing voice:', error);
       setMessages(prev => [...prev.slice(0, -1), { content: "Voice processing failed", isUser: false }]);
     }
   };
@@ -93,7 +88,7 @@ export default function ChatInterface() {
   return (
     <div className="flex flex-col h-screen max-w-3xl mx-auto p-4">
       <h1 className="text-2xl font-bold text-center mb-4">FinMatch AI Assistant</h1>
-      
+
       <div className="flex-1 overflow-y-auto mb-4 space-y-4">
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
@@ -104,13 +99,13 @@ export default function ChatInterface() {
         ))}
         <div ref={chatEndRef} />
       </div>
-      
+
       <div className="flex space-x-2">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           placeholder="Type your message..."
           className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
