@@ -50,7 +50,7 @@ jobs:
           az webapp config set \
             --resource-group finmatch-bsfz \
             --name Finmatcho1--fzulg \
-            --linux-fx-version "PYTHON|3.9"
+            --linux-fx-version "PYTHON|3.10"
 
       - name: Deploy to Azure Web App
         run: |
@@ -69,7 +69,5 @@ jobs:
               AZURE_OPENAI_API_KEY=${{ secrets.AZURE_OPENAI_API_KEY }} \
               AZURE_OPENAI_ENDPOINT=${{ secrets.AZURE_OPENAI_ENDPOINT }} \
               AZURE_OPENAI_CHAT_DEPLOYMENT=${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT }} \
-              AZURE_SEARCH_API_KEY=${{ secrets.AZURE_SEARCH_API_KEY }} \
-              AZURE_SEARCH_ENDPOINT=${{ secrets.AZURE_SEARCH_ENDPOINT }} \
-              AZURE_SEARCH_INDEX=${{ secrets.AZURE_SEARCH_INDEX }} \
+              AZURE_OPENAI_REALTIME_DEPLOYMENT=${{ secrets.AZURE_OPENAI_REALTIME_DEPLOYMENT }} \
               RUNNING_IN_PRODUCTION="true"
