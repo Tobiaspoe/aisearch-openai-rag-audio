@@ -1445,10 +1445,10 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
 
     app.router.add_post("/realtime/transcribe", transcribe_and_respond)
 
-    # Serve static frontend
-    static_dir = Path(__file__).parent / 'static'
+    # Serve static frontend from the Vite build output
+    static_dir = Path(__file__).parent.parent / 'frontend' / 'dist'
     app.router.add_get("/", lambda _: web.FileResponse(static_dir / "index.html"))
-    app.router.add_static("/static", path=static_dir, name="static")
+    app.router.add_static("/", path=static_dir, name="static")
 
     # Apply CORS
     for route in list(app.router.routes()):
