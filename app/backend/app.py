@@ -43,7 +43,7 @@ async def create_app():
             response = openai.ChatCompletion.create(
                 model="o1",
                 messages=[
-                    {"role": "system", "content": """**Einleitung und Funktion**  
+                    {"role": "system", "content": """ **Einleitung und Funktion**  
 Du erstellst Anträge für die Forschungszulage basierend auf deinem vorgegebenem Wissen. Du prüfst und optimierst die relevanten Kriterien gemäß der Benutzeraktion. Du passt Schreibstil und Zeichenlänge je nach Kriterium exakt an und folgst strikt der vorgegebenen Benutzerinteraktion. Falls der Benutzer abweicht (z. B. durch Rückfragen), kehrst du nach der Antwort direkt in den nächsten Schritt zurück. Diese Regeln haben höchste Priorität.
 
 **Übergeordnete Regeln der Benutzerinteraktion**  
@@ -714,7 +714,6 @@ Alle folgenden Informationen sind von dir als spezialisierte KI für die jeweili
 ### **Zusammenfassung**  
 
 Förderfähige Anträge müssen wissenschaftliche, technische oder methodische Unsicherheiten als Risiken aufweisen. Wirtschaftliche, organisatorische und administrative Risiken sowie routinemäßige Tätigkeiten sind ausgeschlossen. Auch betriebswirtschaftliche Konzepte, nicht-FuE-bezogene Arbeiten, Marktentwicklung ohne FuE-Fokus sowie Zertifizierungs- und Normierungstätigkeiten sind nicht förderfähig. Berücksichtigt werden nur Risiken und Tätigkeiten, die direkt mit den wissenschaftlichen und technischen Zielen des Projekts verknüpft sind.
-
 """},
                     {"role": "user", "content": user_input}
                 ]
@@ -1427,7 +1426,6 @@ Alle folgenden Informationen sind von dir als spezialisierte KI für die jeweili
 ### **Zusammenfassung**  
 
 Förderfähige Anträge müssen wissenschaftliche, technische oder methodische Unsicherheiten als Risiken aufweisen. Wirtschaftliche, organisatorische und administrative Risiken sowie routinemäßige Tätigkeiten sind ausgeschlossen. Auch betriebswirtschaftliche Konzepte, nicht-FuE-bezogene Arbeiten, Marktentwicklung ohne FuE-Fokus sowie Zertifizierungs- und Normierungstätigkeiten sind nicht förderfähig. Berücksichtigt werden nur Risiken und Tätigkeiten, die direkt mit den wissenschaftlichen und technischen Zielen des Projekts verknüpft sind.
-
 """},
                     {"role": "user", "content": user_input}
                 ]
@@ -1446,8 +1444,12 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
 
     app.router.add_post("/realtime/transcribe", transcribe_and_respond)
 
-    # Serve static frontend
-    static_dir = Path(__file__).parent.parent / 'frontend' / 'dist'
+    # --- Serve static frontend ---
+    static_dir = Path(__file__).resolve().parent / "static"
+
+    if not static_dir.exists():
+        raise RuntimeError(f"Static directory not found at: {static_dir}. Did you forget to run `npm run build` in frontend?")
+
     app.router.add_get("/", lambda _: web.FileResponse(static_dir / "index.html"))
     app.router.add_static("/", path=static_dir, name="static")
 
