@@ -1446,7 +1446,7 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
     app.router.add_post("/realtime/transcribe", transcribe_and_respond)
 
     # --- Serve static files (SPA style) ---
-    static_dir = Path(__file__).parent / "static"
+    static_dir = Path(__file__).parent.parent / "frontend" / "dist"
     index_file = static_dir / "index.html"
 
     # Catch-all route for client-side routing (SPA fallback)
