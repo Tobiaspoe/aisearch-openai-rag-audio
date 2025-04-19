@@ -130,8 +130,7 @@ async def create_app():
         Path(__file__).parent / "frontend" / "dist",  # Azure deployment
         Path(__file__).parent.parent / "app" / "frontend" / "dist",  # Dev env
         Path("frontend/dist"),  # fallback
-    ]
-
+        ]
     static_dir = None
     for dir_path in possible_static_dirs:
         logger.info(f"Checking static dir: {dir_path}")
