@@ -1446,8 +1446,22 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
     app.router.add_post("/realtime/transcribe", transcribe_and_respond)
 
     # --- Serve static files from frontend/dist ---
-    static_dir = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+    # __file__ = /tmp/<id>/backend/app.py
+    #   .parent     = /tmp/<id>/backend
+    #   .parent.parent = /tmp/<id>    ← this is your project root
+    static_dir = Path(__file__).resolve().parent.parent / "frontend" / "dist"
     index_file = static_dir / "index.html"
+
+    # (optional) sanity check
+    if not static_dir.exists():
+      raise RuntimeError(f"Static dir not found: {static_dir}")
+
+    async def index_handler(request):
+      return web.FileResponse(index_file)
+
+    app.router.add_static("/", path=str(static_dir), name="static")
+    app.router.add_get("/", index_handler)
+    app.router.add_get("/{tail:.*}", index_handler)
 
     # Catch-all route for client-side routing (SPA fallback)
     async def index_handler(request):
