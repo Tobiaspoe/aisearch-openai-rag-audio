@@ -1,15 +1,20 @@
 #!/bin/bash
 
-# Define zip name
+# Define the zip name
 ZIP_NAME="app.zip"
 
-# Remove existing zip if it exists
+# Remove any existing zip
 rm -f "$ZIP_NAME"
 
-# Zip the entire app folder from root
+# Zip only the necessary parts of the app
 zip -r "$ZIP_NAME" app/ \
-  -x "app/frontend/node_modules/*" \
-     "app/backend/__pycache__/*" \
-     "app/backend/*.wav"
+  -x "**/node_modules/*" \
+     "**/__pycache__/*" \
+     "**/*.wav" \
+     "**/.git/*" \
+     "**/.env" \
+     "**/venv/*" \
+     "**/.DS_Store"
 
-echo "✅ Zipped app folder into $ZIP_NAME"
+echo "✅ Successfully zipped to $ZIP_NAME"
+
