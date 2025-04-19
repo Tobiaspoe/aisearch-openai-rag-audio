@@ -12,6 +12,7 @@ import json
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("voicerag")
 
+
 async def create_app():
     if not os.environ.get("RUNNING_IN_PRODUCTION"):
         logger.info("Running in development mode, loading from .env file")
@@ -29,7 +30,7 @@ async def create_app():
         )
     })
 
-    # /chat route using o1
+    # /chat endpoint
     async def chat_handler(request):
         try:
             data = await request.json()
@@ -37,8 +38,6 @@ async def create_app():
 
             openai.api_key = os.environ["OPENAI_API_KEY"]
             openai.api_base = "https://api.openai.com/v1"
-            openai.api_type = "openai"
-            openai.api_version = None
 
             response = openai.ChatCompletion.create(
                 model="o1",
@@ -715,7 +714,7 @@ Alle folgenden Informationen sind von dir als spezialisierte KI für die jeweili
 
 Förderfähige Anträge müssen wissenschaftliche, technische oder methodische Unsicherheiten als Risiken aufweisen. Wirtschaftliche, organisatorische und administrative Risiken sowie routinemäßige Tätigkeiten sind ausgeschlossen. Auch betriebswirtschaftliche Konzepte, nicht-FuE-bezogene Arbeiten, Marktentwicklung ohne FuE-Fokus sowie Zertifizierungs- und Normierungstätigkeiten sind nicht förderfähig. Berücksichtigt werden nur Risiken und Tätigkeiten, die direkt mit den wissenschaftlichen und technischen Zielen des Projekts verknüpft sind.
 
- """},
+"""},
                     {"role": "user", "content": user_input}
                 ]
             )
@@ -724,11 +723,12 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
             return web.json_response({"response": answer})
 
         except Exception as e:
+            logger.error(f"/chat error: {e}")
             return web.json_response({"error": str(e)}, status=500)
 
     app.router.add_post("/chat", chat_handler)
 
-    # /realtime/transcribe route — Whisper to o1 chat
+    # /realtime/transcribe endpoint
     async def transcribe_and_respond(request):
         try:
             data = await request.post()
@@ -738,23 +738,19 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
             with open(temp_path, "wb") as f:
                 f.write(audio_file.read())
 
-            # Use Whisper via Azure OpenAI
             with open(temp_path, "rb") as audio_file:
                 transcription = openai.Audio.transcribe(
-                    "whisper-1",
-                    audio_file,
+                    model="whisper-1",
+                    file=audio_file,
                     api_key=os.environ["AZURE_OPENAI_API_KEY"],
                     api_base=os.environ["AZURE_OPENAI_ENDPOINT"]
                 )
 
             temp_path.unlink()
-
             user_input = transcription["text"]
 
-            # Now send transcribed text to o1 for response
             openai.api_key = os.environ["OPENAI_API_KEY"]
             openai.api_base = "https://api.openai.com/v1"
-            openai.api_type = "openai"
 
             response = openai.ChatCompletion.create(
                 model="o1",
@@ -1444,23 +1440,27 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
             })
 
         except Exception as e:
+            logger.error(f"/realtime/transcribe error: {e}")
             return web.json_response({"error": str(e)}, status=500)
 
     app.router.add_post("/realtime/transcribe", transcribe_and_respond)
 
-    # Serve frontend
-    current_directory = Path(__file__).parent
-    app.add_routes([web.get('/', lambda _: web.FileResponse(current_directory / 'static/index.html'))])
-    app.router.add_static('/', path=current_directory / 'static', name='static')
+    # Serve static frontend
+    static_dir = Path(__file__).parent / 'static'
+    app.router.add_get("/", lambda _: web.FileResponse(static_dir / "index.html"))
+    app.router.add_static("/static", path=static_dir, name="static")
 
-    # Apply CORS to all routes
+    # Apply CORS
     for route in list(app.router.routes()):
         cors.add(route)
 
     return app
 
-# Azure-compatible entry point
+
+# Entry point for Gunicorn or Azure
+app = asyncio.run(create_app())
+
+# For local dev only
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))  # default to 8000 for local dev
-    app = asyncio.run(create_app())
+    port = int(os.environ.get("PORT", 8000))
     web.run_app(app, host="0.0.0.0", port=port)
