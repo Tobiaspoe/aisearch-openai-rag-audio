@@ -1456,13 +1456,10 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
     return app
 
 
-# Gunicorn/Azure entrypoint
-async def init_app():
-    return await create_app()
-
-# Local dev only
-if __name__ == "__main__":
-    import asyncio
-    port = int(os.environ.get("PORT", 8000))
+    # Gunicorn/Azure entrypoint
     app = asyncio.run(create_app())
-    web.run_app(app, host="0.0.0.0", port=port)
+
+    # Local dev only
+    if __name__ == "__main__":
+        port = int(os.environ.get("PORT", 8000))
+        web.run_app(app, host="0.0.0.0", port=port)
