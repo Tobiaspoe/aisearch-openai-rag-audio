@@ -1,20 +1,22 @@
 import logging
 import os
+import asyncio
 from pathlib import Path
 
 from aiohttp import web
 import aiohttp_cors
 from dotenv import load_dotenv
 import openai
+import json
 
+# Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("voicerag")
 
-
+# --- App Factory ---
 async def create_app():
-    # Load environment variables from .env only in development
     if not os.environ.get("RUNNING_IN_PRODUCTION"):
-        logger.info("Running in development mode, loading from .env file")
+        logger.info("Running in development mode, loading .env")
         load_dotenv()
 
     app = web.Application()
@@ -29,7 +31,7 @@ async def create_app():
         )
     })
 
-    # /chat endpoint
+    # --- /chat endpoint ---
     async def chat_handler(request):
         try:
             data = await request.json()
@@ -727,7 +729,7 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
 
     app.router.add_post("/chat", chat_handler)
 
-    # /realtime/transcribe endpoint
+    # --- /realtime/transcribe endpoint ---
     async def transcribe_and_respond(request):
         try:
             data = await request.post()
@@ -1444,22 +1446,21 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
 
     app.router.add_post("/realtime/transcribe", transcribe_and_respond)
 
-    # Serve static frontend files (Vite build)
-    static_dir = Path(__file__).parent / 'frontend' / 'dist'
+    # Serve static frontend
+    static_dir = Path(__file__).parent.parent / 'frontend' / 'dist'
     app.router.add_get("/", lambda _: web.FileResponse(static_dir / "index.html"))
     app.router.add_static("/", path=static_dir, name="static")
 
-    # Apply CORS to all routes
+    # Apply CORS to routes
     for route in list(app.router.routes()):
         cors.add(route)
 
     return app
 
+# --- TOP-LEVEL app variable for Gunicorn ---
+app = asyncio.run(create_app())  # ✅ Required for Gunicorn to find `app`
 
-    # Gunicorn/Azure entrypoint
-    app = asyncio.run(create_app())
-
-    # Local dev only
-    if __name__ == "__main__":
-        port = int(os.environ.get("PORT", 8000))
-        web.run_app(app, host="0.0.0.0", port=port)
+# --- For local development only ---
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    web.run_app(app, host="0.0.0.0", port=port)
