@@ -19,7 +19,7 @@ jobs:
           python-version: '3.10'
 
       - name: Install backend dependencies
-        working-directory: "app"
+        working-directory: app
         run: |
           python -m pip install --upgrade pip
           pip install --no-cache-dir -r requirements.txt
@@ -27,20 +27,23 @@ jobs:
       - name: Set up Node.js (for frontend build)
         uses: actions/setup-node@v3
         with:
-          node-version: '20'  # Match your frontend's Node version
+          node-version: '20'
 
       - name: Build frontend
-        working-directory: "app/frontend"
+        working-directory: app/frontend
         run: |
           npm install
           npm run build
-          rm -rf ./dist/**/*.map  # Remove sourcemaps (security)
+          rm -rf ./dist/**/*.map  # optional security cleanup
 
-      - name: Create deployment directory
+      - name: Prepare deployment package
         run: |
           mkdir -p deploy/app
-          cp -r app/* deploy/app/
-          rm -rf deploy/app/frontend/node_modules deploy/app/.env*  # Cleanup
+          cp -r app/. deploy/app/  # Preserve structure including frontend/dist
+
+      - name: "Debug: list frontend dist contents"
+        run: |
+          ls -R deploy/app/frontend
 
       - name: Zip deployment package
         run: |
@@ -66,7 +69,7 @@ jobs:
             --name Finmatcho1--fzulg \
             --src-path app.zip \
             --type zip \
-            --clean true  # Ensures clean deployment
+            --clean true
 
       - name: Configure environment variables
         run: |
@@ -81,9 +84,9 @@ jobs:
               AZURE_OPENAI_REALTIME_DEPLOYMENT=${{ secrets.AZURE_OPENAI_REALTIME_DEPLOYMENT }} \
               RUNNING_IN_PRODUCTION="true" \
               WEBSITES_PORT=8000 \
-              SCM_DO_BUILD_DURING_DEPLOYMENT="false"  # Disable auto-build
+              SCM_DO_BUILD_DURING_DEPLOYMENT="false"
 
-      - name: Restart App Service (optional)
+      - name: Restart App Service
         run: |
           az webapp restart \
             --resource-group finmatch-bsfz \

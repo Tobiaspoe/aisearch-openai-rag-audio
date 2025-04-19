@@ -127,13 +127,14 @@ async def create_app():
 
     # --- Serve static files ---
     possible_static_dirs = [
-        Path(__file__).parent / "frontend" / "dist",  # Azure deployment structure
-        Path(__file__).parent.parent / "app" / "frontend" / "dist",  # Local dev structure
-        Path("frontend/dist"),  # Fallback
+        Path(__file__).parent / "frontend" / "dist",  # Azure deployment
+        Path(__file__).parent.parent / "app" / "frontend" / "dist",  # Dev env
+        Path("frontend/dist"),  # fallback
     ]
 
     static_dir = None
     for dir_path in possible_static_dirs:
+        logger.info(f"Checking static dir: {dir_path}")
         if dir_path.exists():
             static_dir = dir_path
             break
@@ -152,6 +153,23 @@ async def create_app():
         app.router.add_static("/static", path=static_dir, name="static")
         app.router.add_get("/", index_handler)
         app.router.add_get("/{tail:.*}", index_handler)
+
+        # Write debug startup file (Azure Kudu viewable)
+        try:
+            with open("/tmp/startup.txt", "w") as f:
+                f.write(f"App started. Serving static from: {static_dir}\n")
+        except Exception as e:
+            logger.warning(f"Failed to write startup log: {e}")
+
+    # --- Debug route (optional) ---
+    async def debug_env(request):
+        return web.json_response({
+            "cwd": os.getcwd(),
+            "static_dir": str(static_dir) if static_dir else None,
+            "env": {k: v for k, v in os.environ.items() if "KEY" not in k and "SECRET" not in k}
+        })
+
+    app.router.add_get("/debug", debug_env)
 
     # Apply CORS to all routes
     for route in list(app.router.routes()):
