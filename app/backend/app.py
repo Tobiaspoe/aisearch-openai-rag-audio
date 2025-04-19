@@ -714,7 +714,7 @@ Alle folgenden Informationen sind von dir als spezialisierte KI für die jeweili
 
 Förderfähige Anträge müssen wissenschaftliche, technische oder methodische Unsicherheiten als Risiken aufweisen. Wirtschaftliche, organisatorische und administrative Risiken sowie routinemäßige Tätigkeiten sind ausgeschlossen. Auch betriebswirtschaftliche Konzepte, nicht-FuE-bezogene Arbeiten, Marktentwicklung ohne FuE-Fokus sowie Zertifizierungs- und Normierungstätigkeiten sind nicht förderfähig. Berücksichtigt werden nur Risiken und Tätigkeiten, die direkt mit den wissenschaftlichen und technischen Zielen des Projekts verknüpft sind.
 
-"""},
+"""},  # Update this as needed
                     {"role": "user", "content": user_input}
                 ]
             )
@@ -1427,7 +1427,7 @@ Alle folgenden Informationen sind von dir als spezialisierte KI für die jeweili
 
 Förderfähige Anträge müssen wissenschaftliche, technische oder methodische Unsicherheiten als Risiken aufweisen. Wirtschaftliche, organisatorische und administrative Risiken sowie routinemäßige Tätigkeiten sind ausgeschlossen. Auch betriebswirtschaftliche Konzepte, nicht-FuE-bezogene Arbeiten, Marktentwicklung ohne FuE-Fokus sowie Zertifizierungs- und Normierungstätigkeiten sind nicht förderfähig. Berücksichtigt werden nur Risiken und Tätigkeiten, die direkt mit den wissenschaftlichen und technischen Zielen des Projekts verknüpft sind.
 
-"""},
+"""},  # Same note as above
                     {"role": "user", "content": user_input}
                 ]
             )
@@ -1445,8 +1445,8 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
 
     app.router.add_post("/realtime/transcribe", transcribe_and_respond)
 
-    # --- Serve static files (SPA style) ---
-    static_dir = Path(__file__).parent.parent / "frontend" / "dist"
+    # --- Serve static files from frontend/dist ---
+    static_dir = Path(__file__).resolve().parents[2] / "frontend" / "dist"
     index_file = static_dir / "index.html"
 
     # Catch-all route for client-side routing (SPA fallback)
@@ -1455,7 +1455,7 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
 
     app.router.add_static("/", path=static_dir, name="static")
     app.router.add_get("/", index_handler)
-    app.router.add_get("/{tail:.*}", index_handler)  # Fallback for SPA routes
+    app.router.add_get("/{tail:.*}", index_handler)
 
     # Apply CORS to routes
     for route in list(app.router.routes()):
@@ -1470,4 +1470,3 @@ app = asyncio.run(create_app())
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     web.run_app(app, host="0.0.0.0", port=port)
-
