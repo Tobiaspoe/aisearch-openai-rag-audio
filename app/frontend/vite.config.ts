@@ -3,42 +3,43 @@ import { fileURLToPath } from "url";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-// Only needed in ESM environments (e.g., if "type": "module" is set in package.json)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig({
-  base: "./", // 👈 this is the important fix
+  base: "/static/",  // Changed to match Azure static files serving
   plugins: [react()],
   build: {
     outDir: "dist",
     emptyOutDir: true,
-    sourcemap: true,
+    sourcemap: process.env.NODE_ENV !== 'production',
+    manifest: true,
+    rollupOptions: {
+      output: {
+        assetFileNames: 'assets/[name]-[hash][extname]',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js'
+      }
+    }
   },
   resolve: {
-    preserveSymlinks: true,
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
   server: {
-    proxy: {
-      "/realtime": {
-        target: "ws://localhost:8765",
-        ws: true,
-        rewriteWsOrigin: true,
-      },
-      "/chat": {
-        target: "http://localhost:8765",
-        changeOrigin: true,
-        secure: false,
-      },
-      "/realtime/transcribe": {
-        target: "http://localhost:8765",
-        changeOrigin: true,
-        secure: false,
-      },
+    port: 3000,
+    strictPort: true,
+    hmr: {
+      port: 3000
     },
-  },
+    proxy: {
+      "^/(chat|realtime|health)": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        secure: false,
+        ws: true
+      }
+    }
+  }
 });
-

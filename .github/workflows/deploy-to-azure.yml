@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -22,18 +22,30 @@ jobs:
         working-directory: "app"
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install --no-cache-dir -r requirements.txt
+
+      - name: Set up Node.js (for frontend build)
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'  # Match your frontend's Node version
 
       - name: Build frontend
         working-directory: "app/frontend"
         run: |
           npm install
           npm run build
+          rm -rf ./dist/**/*.map  # Remove sourcemaps (security)
 
-      - name: Prepare deployment package
+      - name: Create deployment directory
         run: |
-          cd app
-          zip -r ../app.zip . -x ".git/*" ".github/*" "tests/*" "*.env"
+          mkdir -p deploy/app
+          cp -r app/* deploy/app/
+          rm -rf deploy/app/frontend/node_modules deploy/app/.env*  # Cleanup
+
+      - name: Zip deployment package
+        run: |
+          cd deploy
+          zip -r ../app.zip . -x ".git/*" ".github/*" "tests/*" "*.env*" "__pycache__/*" "*.pyc"
 
       - name: Login to Azure
         uses: azure/login@v1
@@ -53,7 +65,8 @@ jobs:
             --resource-group finmatch-bsfz \
             --name Finmatcho1--fzulg \
             --src-path app.zip \
-            --type zip
+            --type zip \
+            --clean true  # Ensures clean deployment
 
       - name: Configure environment variables
         run: |
@@ -61,9 +74,17 @@ jobs:
             --resource-group finmatch-bsfz \
             --name Finmatcho1--fzulg \
             --settings \
+              OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
               AZURE_OPENAI_API_KEY=${{ secrets.AZURE_OPENAI_API_KEY }} \
               AZURE_OPENAI_ENDPOINT=${{ secrets.AZURE_OPENAI_ENDPOINT }} \
               AZURE_OPENAI_CHAT_DEPLOYMENT=${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT }} \
               AZURE_OPENAI_REALTIME_DEPLOYMENT=${{ secrets.AZURE_OPENAI_REALTIME_DEPLOYMENT }} \
-              RUNNING_IN_PRODUCTION="true"
+              RUNNING_IN_PRODUCTION="true" \
+              WEBSITES_PORT=8000 \
+              SCM_DO_BUILD_DURING_DEPLOYMENT="false"  # Disable auto-build
 
+      - name: Restart App Service (optional)
+        run: |
+          az webapp restart \
+            --resource-group finmatch-bsfz \
+            --name Finmatcho1--fzulg
