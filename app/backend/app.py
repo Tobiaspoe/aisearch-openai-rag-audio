@@ -1,19 +1,18 @@
 import logging
 import os
-import asyncio
 from pathlib import Path
 
 from aiohttp import web
 import aiohttp_cors
 from dotenv import load_dotenv
 import openai
-import json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("voicerag")
 
 
 async def create_app():
+    # Load environment variables from .env only in development
     if not os.environ.get("RUNNING_IN_PRODUCTION"):
         logger.info("Running in development mode, loading from .env file")
         load_dotenv()
@@ -42,7 +41,7 @@ async def create_app():
             response = openai.ChatCompletion.create(
                 model="o1",
                 messages=[
-                    {"role": "system", "content": """ **Einleitung und Funktion**  
+                    {"role": "system", "content": """**Einleitung und Funktion**  
 Du erstellst Anträge für die Forschungszulage basierend auf deinem vorgegebenem Wissen. Du prüfst und optimierst die relevanten Kriterien gemäß der Benutzeraktion. Du passt Schreibstil und Zeichenlänge je nach Kriterium exakt an und folgst strikt der vorgegebenen Benutzerinteraktion. Falls der Benutzer abweicht (z. B. durch Rückfragen), kehrst du nach der Antwort direkt in den nächsten Schritt zurück. Diese Regeln haben höchste Priorität.
 
 **Übergeordnete Regeln der Benutzerinteraktion**  
@@ -755,7 +754,7 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
             response = openai.ChatCompletion.create(
                 model="o1",
                 messages=[
-                    {"role": "system", "content": """ **Einleitung und Funktion**  
+                    {"role": "system", "content": """**Einleitung und Funktion**  
 Du erstellst Anträge für die Forschungszulage basierend auf deinem vorgegebenem Wissen. Du prüfst und optimierst die relevanten Kriterien gemäß der Benutzeraktion. Du passt Schreibstil und Zeichenlänge je nach Kriterium exakt an und folgst strikt der vorgegebenen Benutzerinteraktion. Falls der Benutzer abweicht (z. B. durch Rückfragen), kehrst du nach der Antwort direkt in den nächsten Schritt zurück. Diese Regeln haben höchste Priorität.
 
 **Übergeordnete Regeln der Benutzerinteraktion**  
@@ -1445,23 +1444,25 @@ Förderfähige Anträge müssen wissenschaftliche, technische oder methodische U
 
     app.router.add_post("/realtime/transcribe", transcribe_and_respond)
 
-    # Serve static frontend from the Vite build output
-    static_dir = Path(__file__).parent.parent / 'frontend' / 'dist'
+    # Serve static frontend files (Vite build)
+    static_dir = Path(__file__).parent / 'frontend' / 'dist'
     app.router.add_get("/", lambda _: web.FileResponse(static_dir / "index.html"))
     app.router.add_static("/", path=static_dir, name="static")
 
-    # Apply CORS
+    # Apply CORS to all routes
     for route in list(app.router.routes()):
         cors.add(route)
 
     return app
 
 
-# Entry point for Gunicorn or Azure
-app = asyncio.run(create_app())
+# Gunicorn/Azure entrypoint
+async def init_app():
+    return await create_app()
 
-# For local dev only
+# Local dev only
 if __name__ == "__main__":
+    import asyncio
     port = int(os.environ.get("PORT", 8000))
+    app = asyncio.run(create_app())
     web.run_app(app, host="0.0.0.0", port=port)
-
