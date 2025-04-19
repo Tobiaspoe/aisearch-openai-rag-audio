@@ -20,10 +20,10 @@
     "vite": "^6.3.2"
   },
   "scripts": {
-    "build": "vite build",
-    "postbuild": "npm run copy-to-backend",
-    "copy-to-backend": "rm -rf ../backend/static/* && cp -r dist/* ../backend/static/",
-    "dev": "vite",
-    "serve": "vite preview"
-  }
+  "build": "vite build",
+  "dev": "vite",
+  "serve": "vite preview",
+  "copy-to-backend": "mkdir -p ../backend/static && rm -rf ../backend/static/* && cp -r dist/* ../backend/static/",
+  "postbuild": "npm run copy-to-backend"
+}
 }
