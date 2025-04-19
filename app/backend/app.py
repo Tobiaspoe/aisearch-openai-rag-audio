@@ -1427,7 +1427,7 @@ Alle folgenden Informationen sind von dir als spezialisierte KI für die jeweili
 
 Förderfähige Anträge müssen wissenschaftliche, technische oder methodische Unsicherheiten als Risiken aufweisen. Wirtschaftliche, organisatorische und administrative Risiken sowie routinemäßige Tätigkeiten sind ausgeschlossen. Auch betriebswirtschaftliche Konzepte, nicht-FuE-bezogene Arbeiten, Marktentwicklung ohne FuE-Fokus sowie Zertifizierungs- und Normierungstätigkeiten sind nicht förderfähig. Berücksichtigt werden nur Risiken und Tätigkeiten, die direkt mit den wissenschaftlichen und technischen Zielen des Projekts verknüpft sind.
 
- """},
+"""},
                     {"role": "user", "content": user_input}
                 ]
             )
