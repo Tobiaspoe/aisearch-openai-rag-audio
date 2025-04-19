@@ -11,7 +11,7 @@ export default defineConfig({
   base: "./", // 👈 this is the important fix
   plugins: [react()],
   build: {
-    outDir: "../backend/static",
+    outDir: "dist",
     emptyOutDir: true,
     sourcemap: true,
   },

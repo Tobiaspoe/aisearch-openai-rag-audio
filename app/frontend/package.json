@@ -21,6 +21,8 @@
   },
   "scripts": {
     "build": "vite build",
+    "postbuild": "npm run copy-to-backend",
+    "copy-to-backend": "rm -rf ../backend/static/* && cp -r dist/* ../backend/static/",
     "dev": "vite",
     "serve": "vite preview"
   }
